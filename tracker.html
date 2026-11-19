@@ -1,0 +1,102 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Black Miles Tracker</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #101114;
+  color: white;
+  text-align: center;
+  padding: 25px 15px;
+}
+.container {
+  max-width: 420px;
+  margin: auto;
+  background: #202228;
+  padding: 25px;
+  border-radius: 18px;
+}
+h1 { font-size: 25px; }
+.big { font-size: 42px; font-weight: bold; margin: 20px; }
+.progress {
+  background: #41434b;
+  height: 14px;
+  border-radius: 20px;
+  overflow: hidden;
+}
+#bar {
+  background: #b5f36b;
+  height: 100%;
+  width: 0%;
+}
+input {
+  width: 85%;
+  padding: 13px;
+  margin: 15px 0;
+  border-radius: 8px;
+  border: none;
+  font-size: 17px;
+}
+button {
+  padding: 13px 22px;
+  border: none;
+  border-radius: 8px;
+  background: #b5f36b;
+  font-weight: bold;
+  font-size: 16px;
+}
+.info { color: #c5c5c5; margin: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🏃 BLACK MILES</h1>
+  <p class="info">Objectif : 1 500 miles</p>
+  <div class="big" id="total">37</div>
+  <div class="progress"><div id="bar"></div></div>
+  <p id="percent">2,5 % atteint</p>
+  <p id="remaining">1 463 miles restants</p>
+  <hr>
+  <h3>Mettre à jour mes miles</h3>
+  <input id="miles" type="number" min="0" max="1500" placeholder="Nombre de miles actuel">
+  <br>
+  <button onclick="saveMiles()">Enregistrer</button>
+  <p class="info" id="message">Tes données sont sauvegardées sur cet appareil.</p>
+</div>
+<script>
+const goal = 1500;
+const field = document.getElementById("miles");
+
+function update(value) {
+  value = Math.max(0, Math.min(goal, Number(value) || 0));
+  document.getElementById("total").textContent = value;
+  document.getElementById("bar").style.width =
+    (value / goal * 100) + "%";
+  document.getElementById("percent").textContent =
+    (value / goal * 100).toFixed(1).replace(".", ",") + " % atteint";
+  document.getElementById("remaining").textContent =
+    Math.max(0, goal - value) + " miles restants";
+  field.value = value;
+}
+
+function saveMiles() {
+  const value = Number(field.value);
+  if (!Number.isFinite(value) || value < 0 || value > goal) {
+    document.getElementById("message").textContent =
+      "Entre un nombre entre 0 et 1 500.";
+    return;
+  }
+  localStorage.setItem("blackMiles", value);
+  update(value);
+  document.getElementById("message").textContent = "Progression sauvegardée !";
+}
+
+const saved = localStorage.getItem("blackMiles");
+update(saved === null ? 37 : saved);
+</script>
+</body>
+</html>
