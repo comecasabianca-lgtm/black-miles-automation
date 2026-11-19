@@ -1,6 +1,7 @@
 
 import os
 from pathlib import Path
+from datetime import date
 
 link = os.environ.get("TRC_LINK", "").strip()
 
@@ -9,42 +10,66 @@ if not link.startswith(
 ):
     raise ValueError("Lien TRC invalide")
 
-output = Path("output")
-output.mkdir(exist_ok=True)
+today = date.today().strftime("%d/%m/%Y")
 
 posts = {
     "reddit.txt": f"""
-Je participe au Black Miles Challenge !
+Bonjour !
 
-Pour découvrir The Running Collective
+Je participe au Black Miles Challenge de
+The Running Collective.
+
+Je partage mon lien de parrainage pour ceux
+qui souhaitent découvrir la plateforme et
+comparer des chaussures de running :
+
+{link}
+
+C'est bien un lien de parrainage personnel.
+Bonne course à tous !
+
+Date : {today}
+""",
+
+    "discord.txt": f"""
+🏃 BLACK MILES
+
+Je participe au challenge de The Running
+Collective !
+
+Si vous voulez découvrir leur plateforme
 et comparer des chaussures de running :
 
 {link}
 
-C'est mon lien de parrainage.
-""",
-
-    "discord.txt": f"""
-🏃 Je participe au Black Miles Challenge !
-
-Pour découvrir The Running Collective :
-{link}
-
-Lien de parrainage personnel !
+Lien de parrainage personnel.
+Merci à ceux qui passeront voir !
 """,
 
     "forums.txt": f"""
-Bonjour à tous !
+Bonjour à tous,
 
-Je participe au Black Miles Challenge.
-Voici mon lien pour découvrir
-The Running Collective :
+Je participe actuellement au Black Miles
+Challenge organisé par The Running Collective.
 
+Pour ceux qui ne connaissent pas, la plateforme
+permet notamment de découvrir et comparer
+des chaussures de running.
+
+Voici mon lien de parrainage personnel :
 {link}
 
-Bonne course !
+N'hésitez pas à me dire ce que vous pensez
+de la plateforme !
+
+Bonne journée et bonnes courses.
+
+Date : {today}
 """
 }
+
+output = Path("output")
+output.mkdir(exist_ok=True)
 
 for filename, content in posts.items():
     (output / filename).write_text(
@@ -52,4 +77,4 @@ for filename, content in posts.items():
         encoding="utf-8"
     )
 
-print("Publications générées avec succès !")
+print("3 publications générées avec succès !")
