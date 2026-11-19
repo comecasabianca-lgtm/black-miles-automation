@@ -6,21 +6,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Black Miles Tracker</title>
 <style>
+* { box-sizing: border-box; }
 body {
   font-family: Arial, sans-serif;
   background: #101114;
   color: white;
   text-align: center;
-  padding: 25px 15px;
+  padding: 20px 12px;
 }
 .container {
-  max-width: 420px;
+  max-width: 440px;
   margin: auto;
   background: #202228;
-  padding: 25px;
+  padding: 24px;
   border-radius: 18px;
 }
 h1 { font-size: 25px; }
+h2 { font-size: 19px; margin-top: 28px; }
 .big { font-size: 42px; font-weight: bold; margin: 20px; }
 .progress {
   background: #41434b;
@@ -33,8 +35,9 @@ h1 { font-size: 25px; }
   height: 100%;
   width: 0%;
 }
+.info { color: #c5c5c5; margin: 12px 0; }
 input {
-  width: 85%;
+  width: 100%;
   padding: 13px;
   margin: 15px 0;
   border-radius: 8px;
@@ -46,33 +49,87 @@ button {
   border: none;
   border-radius: 8px;
   background: #b5f36b;
+  color: #101114;
   font-weight: bold;
   font-size: 16px;
+  cursor: pointer;
 }
-.info { color: #c5c5c5; margin: 12px; }
+.stat {
+  background: #30333b;
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 12px;
+}
+.stat strong {
+  display: block;
+  font-size: 24px;
+  margin-top: 6px;
+}
+.history {
+  text-align: left;
+  margin-top: 15px;
+}
+.entry {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 4px;
+  border-bottom: 1px solid #41434b;
+}
+.small { color: #c5c5c5; font-size: 13px; }
 </style>
 </head>
 <body>
 <div class="container">
   <h1>🏃 BLACK MILES</h1>
-  <p class="info">Objectif : 1 500 miles</p>
+  <p class="info">Objectif : 1 500 miles avant le 30 novembre 2026</p>
+
   <div class="big" id="total">37</div>
   <div class="progress"><div id="bar"></div></div>
   <p id="percent">2,5 % atteint</p>
   <p id="remaining">1 463 miles restants</p>
-  <hr>
-  <h3>Mettre à jour mes miles</h3>
-  <input id="miles" type="number" min="0" max="1500" placeholder="Nombre de miles actuel">
-  <br>
+
+  <div class="stat">
+    Miles à gagner par jour
+    <strong id="daily">Calcul...</strong>
+    <p class="small">Pour atteindre ton objectif à temps</p>
+  </div>
+
+  <h2>Mettre à jour mes miles</h2>
+  <input id="miles" type="number" min="0" max="1500"
+         placeholder="Ton nombre total de miles">
   <button onclick="saveMiles()">Enregistrer</button>
-  <p class="info" id="message">Tes données sont sauvegardées sur cet appareil.</p>
+  <p class="info" id="message">Historique sauvegardé sur cet appareil.</p>
+
+  <h2>📈 Historique</h2>
+  <div class="history" id="history">
+    <p class="info">Aucune entrée pour le moment.</p>
+  </div>
 </div>
+
 <script>
 const goal = 1500;
-const field = document.getElementById("miles");
+const deadline = "2026-11-30";
+
+function todayKey() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getHistory() {
+  try {
+    return JSON.parse(localStorage.getItem("blackMilesHistory") || "{}");
+  } catch {
+    return {};
+  }
+}
 
 function update(value) {
   value = Math.max(0, Math.min(goal, Number(value) || 0));
+
   document.getElementById("total").textContent = value;
   document.getElementById("bar").style.width =
     (value / goal * 100) + "%";
@@ -80,23 +137,72 @@ function update(value) {
     (value / goal * 100).toFixed(1).replace(".", ",") + " % atteint";
   document.getElementById("remaining").textContent =
     Math.max(0, goal - value) + " miles restants";
-  field.value = value;
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const end = new Date(deadline + "T00:00:00");
+  const daysLeft = Math.round((end - now) / 86400000) + 1;
+  const remaining = Math.max(0, goal - value);
+
+  let pace;
+  if (remaining === 0) {
+    pace = "Objectif atteint !";
+  } else if (daysLeft <= 0) {
+    pace = "Date dépassée";
+  } else {
+    pace = Math.ceil(remaining / daysLeft) + " miles";
+  }
+
+  document.getElementById("daily").textContent = pace;
+  document.getElementById("miles").value = value;
 }
 
 function saveMiles() {
+  const field = document.getElementById("miles");
   const value = Number(field.value);
-  if (!Number.isFinite(value) || value < 0 || value > goal) {
+
+  if (field.value.trim() === "" || !Number.isInteger(value)
+      || value < 0 || value > goal) {
     document.getElementById("message").textContent =
-      "Entre un nombre entre 0 et 1 500.";
+      "Entre un nombre entier entre 0 et 1 500.";
     return;
   }
+
   localStorage.setItem("blackMiles", value);
+
+  const history = getHistory();
+  history[todayKey()] = value;
+  localStorage.setItem("blackMilesHistory", JSON.stringify(history));
+
   update(value);
-  document.getElementById("message").textContent = "Progression sauvegardée !";
+  showHistory();
+  document.getElementById("message").textContent =
+    "Progression et historique sauvegardés !";
+}
+
+function showHistory() {
+  const history = getHistory();
+  const dates = Object.keys(history).sort().reverse();
+  const area = document.getElementById("history");
+
+  if (dates.length === 0) {
+    area.innerHTML = '<p class="info">Aucune entrée pour le moment.</p>';
+    return;
+  }
+
+  area.innerHTML = dates.map(date => {
+    const formatted = new Date(date + "T12:00:00")
+      .toLocaleDateString("fr-FR");
+    return `<div class="entry">
+      <span>${formatted}</span>
+      <strong>${history[date]} miles</strong>
+    </div>`;
+  }).join("");
 }
 
 const saved = localStorage.getItem("blackMiles");
 update(saved === null ? 37 : saved);
+showHistory();
 </script>
 </body>
 </html>
